@@ -10,10 +10,10 @@
 + Asp.Net Core
 + Sql Server + Dapper
 + Blazor
++ IdentityServer4
 
 ### Паттерны:
 + MediatR
 + CQRS
 
-Также для регистрации и аутентификации используется IdentityServer
 

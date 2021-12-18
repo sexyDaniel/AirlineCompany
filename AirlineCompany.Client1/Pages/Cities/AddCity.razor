@@ -1,0 +1,60 @@
+﻿@page "/AddCity"
+@using AirlineCompany.Application.Cities.Commands.Create;
+@using AirlineCompany.Application.Common;
+
+@inject HttpClient http;
+@inject NavigationManager NavManager;
+
+<div class="main" style="overflow: hidden;height: 100%;">
+    <div class="outer" style="height: 100%;">
+       
+        <div class="border-container">
+            @if (isErrors)
+            {
+                <div class="text-danger">
+                    <ul>
+                        @foreach (var e in Errors)
+                        {
+                            <li>@e.Text</li>
+                        }
+                    </ul>
+                </div>
+            }
+            <div class="border-container-title text-center">
+                <span>Добавить город</span>
+            </div>
+            <div class="input-group mb-3">
+                <input @bind-value="command.Name" class="form-control" type="text" placeholder="Название города">
+            </div>
+            <div>
+                <button @onclick="Add" class="btn btn-warning">Добавить</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    private CreateCityCommand command = new CreateCityCommand();
+    private bool isErrors = false;
+    private List<Error> Errors;
+
+    private async void Add()
+    {
+        var response = await http.PostAsJsonAsync("https://localhost:5001/api/cities/add", command);
+        if (!response.IsSuccessStatusCode)
+        {
+            var errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            Errors = errors;
+            isErrors = true;
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo($"cities");
+        }
+    }
+
+
+}

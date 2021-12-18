@@ -1,0 +1,20 @@
+﻿@using AirlineCompany.Application.Common;
+
+<div class="text-danger">
+    <ul>
+        @if (ErrorsList != null && ErrorsList.Count > 0)
+        {
+            foreach (var e in ErrorsList) 
+            {
+                <li>@e.Text</li>
+            }
+
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter]
+    public List<Error> ErrorsList { get; set; }
+
+}

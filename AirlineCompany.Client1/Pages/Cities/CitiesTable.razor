@@ -1,0 +1,121 @@
+﻿@page "/cities";
+
+@using AirlineCompany.Application.Cities.Queries.GetCities;
+@*@using AirlineCompany.Client.Shared;*@
+
+@inject HttpClient Http;
+
+@if (citiesVm == null)
+{
+    <h1>Загрузка...</h1>
+}
+else
+{
+    <Add Href="AddCity"></Add>
+    <div class="row">
+        <div class="col-8">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Город</th>
+                        <th>Рейсов из</th>
+                        <th>Рейсов в</th>
+                        <th>More</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < citiesVm.Cities.Count; i++)
+                    {
+                        <tr>
+                            <td>@i</td>
+                            <td>@citiesVm.Cities[i].Name</td>
+                            <td>@citiesVm.Cities[i].FlightsOut</td>
+                            <td>@citiesVm.Cities[i].FlightsIn</td>
+                            <td>
+                                <a href="city/@citiesVm.Cities[i].Id">
+                                    <span class="oi oi-list-rich" aria-hidden="true"></span>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="col-4">
+            <div class="search shadow">
+                <div class="row ">
+                    <h5>Сортировать по</h5>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        Названию
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="isSortByCity" class="checkbox" type="checkbox" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        По рейсам из
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="isSortByArrivedCount" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        По рейсам в
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="isSortByDepartureCount" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Sort" class="btn btn-primary">Сортировать</button>
+                </div>
+
+            </div>
+            <div class="sort shadow">
+                <h5>Поиск</h5>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Город отбытия</span>
+                    <input @bind-value="cityName" class="form-control" type="text">
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Search" class="btn btn-primary">Найти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private CitiesVm citiesVm;
+    private bool isSortByCity;
+    private bool isSortByArrivedCount;
+    private bool isSortByDepartureCount;
+    private string cityName;
+
+    protected async override Task OnInitializedAsync()
+    {
+        citiesVm = await Http.GetFromJsonAsync<CitiesVm>("https://localhost:5001/api/cities/all");
+    }
+
+    private async void Sort()
+    {
+        citiesVm = await Http.GetFromJsonAsync<CitiesVm>("https://localhost:5001/api/cities/sort?" +
+            $"byCityName={isSortByCity}" +
+            $"&byArrivedCount={isSortByArrivedCount}" +
+            $"&byDepartureCount={isSortByDepartureCount}");
+        StateHasChanged();
+    }
+
+    private async void Search()
+    {
+        citiesVm = await Http.GetFromJsonAsync<CitiesVm>("https://localhost:5001/api/cities/search/?" +
+            $"cityName={cityName}");
+        StateHasChanged();
+    }
+
+}

@@ -1,0 +1,215 @@
+﻿@page "/flight/{Id}"
+@using AirlineCompany.Application.Flights.Queries.GetFlightById;
+@using AirlineCompany.Application.Flights.Comands.Update;
+@using AirlineCompany.Application.Common;
+
+@inject IJSRuntime JsRuntime;
+@inject HttpClient Http;
+@inject NavigationManager NavManager
+
+@if (flightVm == null)
+{
+    <h3>Загрузка...</h3>
+}
+else
+{
+    <div class="row">
+        <div class="col-7 outer">
+            <div class="">
+                <Errors ErrorsList=errors />
+
+                <div class="input-group mb-3">
+                    <span style="background-color: #007bff;" class="input-group-text" id="basic-addon1">✈️</span>
+                    <select disabled @bind="command.PlaneId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                        <option selected value="0">Выберите самолет</option>
+                        @foreach (var p in flightVm.Planes)
+                        {
+                            if (p.Id == flightVm.FlightDto.CurrentPlaneId)
+                            {
+                                <option selected value="@p.Id">Id: @p.Id - @p.Model - @p.Capacity человек</option>
+                                continue;
+                            }
+                            <option value="@p.Id">Id: @p.Id - @p.Model - @p.Capacity человек</option>
+                        }
+
+                    </select>
+                </div>
+                <div class="input-group mb-3">
+                    <span style="background-color: #007bff;" class="input-group-text" id="basic-addon1">👨🏻‍✈️</span>
+                    <select @bind="command.CaptainId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                        <option selected value="0">Выберите капитана</option>
+
+                        @foreach (var c in flightVm.Captains)
+                        {
+
+                            if (c.Id == flightVm.FlightDto.CurrentCaptainId)
+                            {
+                                <option selected value="@c.Id">ИН: @c.Id @c.LastName </option>
+                                continue;
+                            }
+                            <option value="@c.Id">ИН: @c.Id @c.LastName</option>
+                        }
+                    </select>
+                </div>
+                <div class="input-group mb-3">
+                    <select @bind="command.DepartyreCityId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                        <option selected value="0">Выберите город отбытия</option>
+                        @foreach (var c in flightVm.Cities)
+                        {
+                            if (c.Id == flightVm.FlightDto.DepartyredCityId)
+                            {
+                                <option value="@c.Id" selected>@c.Id - @c.Name</option>
+                                continue;
+                            }
+                            <option value="@c.Id">@c.Id - @c.Name</option>
+                        }
+
+                    </select>
+                    <span style="background-color: #007bff; color: white;" class=" input-group-text">→</span>
+                    <select @bind="command.ArrivedCityId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                        <option selected value="0">Выберите город прибытия</option>
+                        @foreach (var c in flightVm.Cities)
+                        {
+                            if (c.Id == flightVm.FlightDto.ArrivedCityId)
+                            {
+                                <option value="@c.Id" selected>@c.Id - @c.Name</option>
+                                continue;
+                            }
+                            <option value="@c.Id">@c.Id - @c.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="datetime-local" @bind="@command.DepartyreDate" class="form-control">
+                    <span style="background-color: #007bff; color: white;" class=" input-group-text">→</span>
+                    <input type="datetime-local" @bind-value="@command.ArrivedDate" class="form-control">
+                </div>
+                <button class="btn btn-primary" @onclick="Update">Сохранить</button>
+               @* <button class="btn btn-secondary">Просмотр пассажиров</button>*@
+                <button class="btn btn-danger" @onclick="Delete">Удалить</button>
+            </div>
+
+        </div>
+
+        <div class="col-5" style=" height: 90vh; overflow: auto;">
+            <div class="row">
+                <div class="col-2">
+                    <div class="col-12 text-center">
+                        <span> 0</span>
+                    </div>
+                    @for (var i = 1; i <= flightVm.FlightDto.Rows; i++)
+                    {
+                        <div class="row">
+                            <div class="col-12 mb-1 text-center">
+                                <a href="passenger/1">
+                                    <div style="width: 38px; height: 38px;  margin: 0 auto; ">
+                                        @i
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="col-10">
+                    <div class="seatmap">
+                        <div class="row text-center">
+
+                            @for (var i = 0; i < flightVm.FlightDto.SitsInRows; i++)
+                            {
+                                <div class="col-2">
+                                    <span>@columns[i]</span>
+                                </div>
+                            }
+                        </div>
+                        @{
+                            var step = 0;
+                            @for (var i = 0; i < flightVm.FlightDto.Rows; i++)
+                            {
+
+                                <div class="row text-center mb-1">
+                                    @for (var j = step; j < step + flightVm.FlightDto.SitsInRows; j++)
+                                    {
+
+                                        <div class="col-2">
+                                            <div class="sit-wrap">
+                                                @{
+                                                    if (flightVm.OccupiedPlaces[j].PassengerId != 0)
+                                                    {
+                                                        <a href="/place/@flightVm.OccupiedPlaces[j].SitId/@Id/@(i+1)/@(j+1)/@Cityes" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-html="true" 
+                                                           title="@flightVm.OccupiedPlaces[j].LastName @flightVm.OccupiedPlaces[j].FirstName @flightVm.OccupiedPlaces[j].Patronymic" class="sit-wrap">
+                                                            <div class="sit disable"></div>
+                                                        </a>
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <a href="/place/@flightVm.OccupiedPlaces[j].SitId/@Id/@(i+1)/@(j+1)/@Cityes">
+                                                            <div class="sit"></div>
+                                                        </a>
+
+                                                    }
+                                                }
+                                            </div>
+                                        </div>
+
+                                    }
+
+                                </div>
+                                step += flightVm.FlightDto.SitsInRows;
+                            }
+
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    public string Cityes { get;set; }
+    private List<Error> errors;
+    private UpdateFlightCommand command = new UpdateFlightCommand();
+
+    private char[] columns = new char[] { 'A', 'B', 'C', 'D', 'E', 'F' };
+
+    private FlightByIdVM flightVm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        flightVm = await Http.GetFromJsonAsync<FlightByIdVM>($"https://localhost:5001/api/flights/{Id}");
+        command.FlightId = int.Parse(Id);
+        command.DepartyreDate = flightVm.FlightDto.DepartyredDate;
+        command.ArrivedDate = flightVm.FlightDto.ArrivedDate;
+        command.ArrivedCityId = flightVm.FlightDto.ArrivedCityId;
+        command.DepartyreCityId = flightVm.FlightDto.DepartyredCityId;
+        command.CaptainId = flightVm.FlightDto.CurrentCaptainId;
+        command.PlaneId = flightVm.FlightDto.CurrentPlaneId;
+
+        var depCity = flightVm.Cities.FirstOrDefault(c => c.Id == command.DepartyreCityId).Name;
+        var arrCity = flightVm.Cities.FirstOrDefault(c => c.Id == command.ArrivedCityId).Name;
+        Cityes = $"{depCity} - {arrCity}";
+    }
+
+    private async void Update()
+    {
+        var response = await Http.PutAsJsonAsync("https://localhost:5001/api/flights/update", command);
+        await JsRuntime.InvokeVoidAsync("alert", "Сохранение произошло успешно!");
+    }
+
+    private async void Delete()
+    {
+        var response = await Http.DeleteAsync($"https://localhost:5001/api/flights/delete/{Id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+            return;
+        }
+        NavManager.NavigateTo("flights");
+    }
+}

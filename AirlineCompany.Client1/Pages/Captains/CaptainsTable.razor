@@ -1,0 +1,161 @@
+﻿@page "/captains"
+@using AirlineCompany.Application.Captains.Queries.GetCaptains;
+@inject HttpClient Http;
+
+<link href="~/css/app.css" rel="stylesheet" />
+
+@if (captainsVm == null)
+{
+    <h1>Загрузка...</h1>
+}
+else
+{
+    <Add Href="AddCaptain"></Add>
+    <div class="row">
+        <div class="col-9">
+            <ul class="list">
+                @foreach (var c in captainsVm.Captains)
+                {
+                    <li class="list-item-capitane">
+                        <a href="captain/@c.Id" style="text-decoration: none;">
+                            <div class="list-item-content shadow-sm" style="background-color: #ffffffcc;">
+                                <div class="list-item-header">
+                                    <span>@c.Id</span>
+                                </div>
+                                <div class="list-item-main">
+                                    <div>
+                                        <span>@c.LastName</span>
+                                    </div>
+                                    <div>
+                                        <span> @c.FirstName </span>
+                                    </div>
+                                    <div>
+                                        <span>@c.Patronymic</span>
+                                    </div>
+                                    @if (c.FlightCount == 0)
+                                    {
+                                        <div class="mt-2">
+                                            <span>Статус:</span><span class="badge bg-warning text-light">свободен</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="mt-2">
+                                            <span>Рейсов:</span><span class="badge bg-secondary text-light">@c.FlightCount</span>
+                                        </div>
+                                    }
+
+
+                                </div>
+                            </div>
+                        </a>
+
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-3">
+            <div class="search shadow">
+                <div class="row ">
+                    <h5>Сортировать по</h5>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Фамилии
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="SortByLastName" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Имени
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="SortByFirstName" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Отчеству
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="SortByPatronymic" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Статусу
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="SortByStatus" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Sort" class="btn btn-primary">Сортировать</button>
+                </div>
+
+            </div>
+            <div class="sort shadow">
+                <h5>Поиск</h5>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Фамилия</span>
+                    <input @bind-value="lastName" type="text" class="form-control" aria-label="">
+                </div>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Имя</span>
+                    <input @bind-value="firstName" type="text" class="form-control" aria-label="">
+                </div>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Отчество</span>
+                    <input @bind-value="patronymic" type="text" class="form-control" aria-label="">
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Search" class="btn btn-primary">Найти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
+@code {
+    private CaptainsVm captainsVm;
+
+    private bool SortByFirstName;
+    private bool SortByLastName;
+    private bool SortByPatronymic;
+    private bool SortByStatus;
+    private string firstName;
+    private string lastName;
+    private string patronymic;
+    private bool status;
+
+    protected override async Task OnInitializedAsync()
+    {
+        captainsVm = await Http.GetFromJsonAsync<CaptainsVm>("https://localhost:5001/api/captains/all");
+    }
+
+    private async void Sort()
+    {
+        captainsVm = await Http.GetFromJsonAsync<CaptainsVm>($"https://localhost:5001/api/captains/sort?" +
+            $"byFirstName={SortByFirstName}" +
+            $"&byLastName={SortByLastName}" +
+            $"&byPatronymic={SortByPatronymic}" +
+            $"&byStatus={SortByStatus}");
+        StateHasChanged();
+    }
+
+    private async void Search()
+    {
+        captainsVm = await Http.GetFromJsonAsync<CaptainsVm>($"https://localhost:5001/api/captains/search?" +
+            $"byFirstName={firstName}" +
+            $"&byLastName={lastName}" +
+            $"&byPatronymic={patronymic}");
+        StateHasChanged();
+    }
+}

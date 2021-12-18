@@ -1,0 +1,46 @@
+﻿
+
+<div class="sidebar">
+    <div class="">
+        <div class="top-row pl-4 navbar navbar-dark">
+            <a class="navbar-brand float-left" href="">АвиаКомпания</a>
+            <button class="navbar-toggler">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+        <ul class="nav flex-column">
+            <AuthorizeView>
+                <Authorized>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="flights" Match="NavLinkMatch.All">
+                            <span class="oi oi-transfer" aria-hidden="true"></span> Рейсы
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="/passengers">
+                            <span class="oi oi-people" aria-hidden="true"></span> Пассажиры
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="planes">
+                            <span class="oi oi-" aria-hidden="true">&#9992</span> Самолеты
+                        </NavLink>
+                    </li>
+                    <li class="nav-item px-3">
+                        <NavLink class="nav-link" href="captains">
+                            <span class="oi oi-person" aria-hidden="true"></span> Капитаны
+                        </NavLink>
+                    </li>
+                    @if (context.User.Identity.Name == "SyperAdmin") 
+                    {
+                        <li class="nav-item px-3">
+                            <NavLink class="nav-link" href="cities">
+                                <span class="oi oi-home" aria-hidden="true"></span> Города
+                            </NavLink>
+                        </li>
+                    }
+                </Authorized>
+            </AuthorizeView>
+        </ul>
+    </div>
+</div>

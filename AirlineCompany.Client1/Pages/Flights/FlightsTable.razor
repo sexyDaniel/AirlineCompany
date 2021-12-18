@@ -1,0 +1,180 @@
+﻿@page "/flights"
+@using AirlineCompany.Application.Flights.Queries.GetFlights;
+@using AirlineCompany.Application.Cities.Queries.GetCities;
+@using AirlineCompany.Application.Flights.Comands.Delete;
+
+@inject HttpClient Http;
+
+
+<div class="row">
+    <div class="col-9">
+        @if (flightVm == null)
+        {
+            <h1>Загрузка...</h1>
+        }
+        else if (flightVm.Flights == null || flightVm.Flights.Count == 0)
+        {
+            <h3>Данные не найдены</h3>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Город отбытия</th>
+                        <th>Город прибытия</th>
+                        <th>Дата отбытия</th>
+                        <th>Дата прибытия</th>
+                        <th>Капитан</th>
+                        <th>Самолет</th>
+                        <th>More</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < flightVm.Flights.Count; i++)
+                    {
+                        <tr>
+                            <td>@(i+1)</td>
+                            <td>@flightVm.Flights[i].DepartureCity</td>
+                            <td>@flightVm.Flights[i].ArriverCity</td>
+                            <td>@flightVm.Flights[i].DepartureDate.ToString("g")</td>
+                            <td>@flightVm.Flights[i].ArriverDate.ToString("g")</td>
+                            <td>@flightVm.Flights[i].CurrentCaptain</td>
+                            <td>@flightVm.Flights[i].CurrentPlane</td>
+                            <td>
+                                <a href="flight/@flightVm.Flights[i].Id">
+                                    <span class="oi oi-list-rich" aria-hidden="true"></span>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    </div>
+    <div class="col-3">
+        <div class="search shadow">
+            <div class="row ">
+                <h5>Сортировать по</h5>
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    Городу отбытия
+                </div>
+                <div class="col-4">
+                    <input @bind-value="IsSortByDepartyreCity" class="checkbox" type="checkbox" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    Городу прибытия
+                </div>
+                <div class="col-4">
+                    <input @bind-value="IsSortByArrivedCity" class="checkbox" type="checkbox">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    Дате отбытия
+                </div>
+                <div class="col-4">
+                    <input @bind-value="IsSortByDepartyreDate" class="checkbox" type="checkbox">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-8">
+                    Дате прибытия
+                </div>
+                <div class="col-4">
+                    <input @bind-value="IsSortByArribedDate" class="checkbox" type="checkbox">
+                </div>
+            </div>
+            <div class="row" style="padding-top: 10px;">
+                <button @onclick="Sort" class="btn btn-primary">Сортировать</button>
+            </div>
+
+
+
+        </div>
+        <div class="sort shadow">
+            <h5>Поиск</h5>
+            <div class="form-group mb-3">
+                <div>
+                    <label>Город отбытия</label>
+                </div>
+                @*<span class="input-group-text mr-1" id="inputGroup-sizing-sm">Город отбытия</span>*@
+                <select @bind="DepartyreCityId" class="form-select form-control" aria-label="Default select example">
+                    <option value="0" selected>Выберите город</option>
+                    @if (citiesVm != null)
+                    {
+                        @foreach (var a in citiesVm.Cities)
+                        {
+                            <option value="@a.Id">@a.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <div>
+                    <label>Город прибытия</label>
+                </div>
+                <select @bind="ArrivedCityId" class="form-select form-control" aria-label="Default select example">
+                    <option value="0" selected>Выберите город</option>
+                    @if (citiesVm != null)
+                    {
+                        @foreach (var a in citiesVm.Cities)
+                        {
+                            <option value="@a.Id">@a.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="row" style="padding-top: 10px;">
+                <button @onclick="Search" class="btn btn-primary">Найти</button>
+            </div>
+        </div>
+        <div class="row" style="padding-top: 10px;">
+            <Add Href="AddFlight"></Add>
+        </div>
+    </div>
+</div>
+
+@code{
+
+    private FlightsVm flightVm;
+    private CitiesVm citiesVm;
+    private DeleteFlightCommand command;
+    private bool IsSortByArrivedCity;
+    private bool IsSortByArribedDate;
+    private bool IsSortByDepartyreCity;
+    private bool IsSortByDepartyreDate;
+    private int DepartyreCityId;
+    private int ArrivedCityId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        flightVm = await Http.GetFromJsonAsync<FlightsVm>("https://localhost:5001/api/flights/all");
+        citiesVm = await Http.GetFromJsonAsync<CitiesVm>("https://localhost:5001/api/cities/all");
+        command = new DeleteFlightCommand();
+    }
+
+    private async Task Sort()
+    {
+        flightVm = await Http.GetFromJsonAsync<FlightsVm>($"https://localhost:5001/api/flights/sort?byArrCity={IsSortByArrivedCity}" +
+            $"&byDepCity={IsSortByDepartyreCity}" +
+            $"&byDepDate={IsSortByDepartyreDate}" +
+            $"&byArrDate={IsSortByArribedDate}");
+        StateHasChanged();
+    }
+
+    private async Task Search()
+    {
+        flightVm = await Http.GetFromJsonAsync<FlightsVm>($"https://localhost:5001/api/flights/search/?" +
+            $"depCityId={DepartyreCityId}" +
+            $"&arrCityId={ArrivedCityId}");
+        StateHasChanged();
+    }
+
+}

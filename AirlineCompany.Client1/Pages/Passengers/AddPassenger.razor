@@ -1,0 +1,60 @@
+﻿@page "/AddPassenger"
+
+@using AirlineCompany.Application.Passengers.Commands.Create;
+@using AirlineCompany.Application.Common;
+
+@inject NavigationManager NavManager
+@inject HttpClient http;
+
+<div class="main" style="overflow: hidden;height: 100%;">
+    <div class="outer" style="height: 100%;">
+        <div class="border-container">
+            <Errors ErrorsList="errors"/>
+            <div class="border-container-title text-center">
+                <span>Добавить пассажира</span>
+            </div>
+            <div class="input-group mb-3">
+                <input @bind-value="command.LastName" maxlength="40" class="form-control" type="text" placeholder="Фамилия">
+            </div>
+            <div class="input-group mb-3">
+                <input @bind-value="command.FirstName" maxlength="40" class="form-control" type="text" placeholder="Имя">
+            </div>
+            <div class="input-group mb-3">
+                <input @bind-value="command.Patronomic" maxlength="40" class="form-control" type="text" placeholder="Отчество">
+            </div>
+            <div class="input-group mb-3">
+                <input @bind-value="command.Birthday" class="form-control" type="date" min="@minDate" max="@maxDate" placeholder="День рождения">
+            </div>
+            <div>
+                <button @onclick="Add" class="btn btn-warning">Добавить</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private CreatePassengerCommand command = new CreatePassengerCommand();
+    private List<Error> errors;
+    private DateTime minDate = DateTime.Now.AddYears(-120);
+    private DateTime maxDate = DateTime.Now.AddYears(-18);
+
+    protected  override void OnInitialized()
+    {
+        command.Birthday = @DateTime.Now.AddYears(-18);
+    }
+
+    private async void Add()
+    {
+        var response = await http.PostAsJsonAsync("https://localhost:5001/api/passengers/add", command);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo("passengers");
+        }
+    }
+}

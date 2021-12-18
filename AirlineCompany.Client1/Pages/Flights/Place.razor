@@ -1,0 +1,91 @@
+﻿@page "/place/{Id}/{FlightId}/{row}/{inRow}/{cityes}"
+@using AirlineCompany.Application.Passengers.Queries.GetPassengersForSits;
+@using AirlineCompany.Application.Sits.Commands.Update;
+
+@inject HttpClient http
+@inject NavigationManager NavManager
+@if (passengersForSitsVm == null)
+{
+
+
+<h3>Загрузка...</h3>
+}
+else 
+{
+<div class="main" style="overflow: hidden; height: 100%;">
+    <div class="outer" style="height: 100%;">
+        <div class="">
+            <div class="sit-info shadow p-5 rounded">
+                <div class="">
+                    <span style="font-size: 30px;" class="badge bg-warning text-light text-left">Рейс @FlightId @cityes</span>
+                </div>
+                <div style="margin-top: 10px;">
+                    <span style="font-size: 20px; color: gray;">Ряд @row - место @inRow</span>
+                </div>
+                <div style="margin-top: 5px;">
+                    Статус:
+                    @if (passengersForSitsVm.CurrentPassenger != null)
+                    {
+                        <span class="badge bg-secondary text-light"> Занято </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary text-light"> Свободно </span>
+                    }
+                </div>
+                <div class="input-group mt-3">
+                    <select @bind="command.PassengerId" class="border-container-input form-control form-select-lg" aria-label=".form-select-lg example">
+                        <option value="0" selected>Нет пассажира</option>
+                        @if (passengersForSitsVm.CurrentPassenger != null)
+                        {
+                            <option value="@passengersForSitsVm.CurrentPassenger.Id" selected>@passengersForSitsVm.CurrentPassenger.Id: @passengersForSitsVm.CurrentPassenger.LastName @passengersForSitsVm.CurrentPassenger.FirstName @passengersForSitsVm.CurrentPassenger.Patronymic</option>
+                        }
+                        @foreach (var a in passengersForSitsVm.passengerForSits)
+                        {
+                            <option value="@a.Id">@a.Id: @a.LastName @a.FirstName @a.Patronymic</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <button @onclick="Save" class="btn btn-primary mt-3">Сохранить</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+}
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    [Parameter]
+    public string FlightId { get; set; }
+    [Parameter]
+    public string row { get; set; }
+    [Parameter]
+    public string inRow { get; set; }
+    [Parameter]
+    public string cityes { get; set; }
+    private UpdateSitsCommand command;
+
+    private PassengersForSitsVm passengersForSitsVm;
+
+    protected async override Task OnInitializedAsync()
+    {
+        passengersForSitsVm = await http.GetFromJsonAsync<PassengersForSitsVm>($"https://localhost:5001/api/passengers/forSits/?" +
+            $"FlightId={FlightId}" +
+            $"&currentSitId={Id}");
+        command = new UpdateSitsCommand();
+        command.SitId = int.Parse(Id);
+        command.PassengerId = passengersForSitsVm.CurrentPassenger == null ? 0 : passengersForSitsVm.CurrentPassenger.Id;
+    }
+
+    private async void Save()
+    {
+        var response = await http.PutAsJsonAsync("https://localhost:5001/api/sits/update", command);
+        NavManager.NavigateTo($"flight/{FlightId}");
+    }
+}

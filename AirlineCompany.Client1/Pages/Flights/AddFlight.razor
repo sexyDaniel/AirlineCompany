@@ -1,0 +1,109 @@
+﻿@page "/AddFlight"
+@using AirlineCompany.Application.Flights.Queries.GetModelsForCreateFlight;
+@using AirlineCompany.Application.Flights.Comands.Create;
+@using AirlineCompany.Application.Common;
+@inject HttpClient Http;
+@inject NavigationManager NavManager
+
+@if (createVm == null)
+{
+    <h3>Загрузка...</h3>
+}
+else
+{
+    <div class="outer" style="height: 100%;">
+        <div class="border-container">
+            <div class="text-danger">
+                <ul>
+                    @if (errors != null && errors.Count != 0)
+                    {
+                        foreach (var e in errors) 
+                        {
+                            <li>@e.Text</li>
+                        }
+                    }
+                </ul>
+            </div>
+            <div class="border-container-title text-center">
+                <span>Создать рейс</span>
+            </div>
+            <div class="input-group mb-3">
+                <select @bind="command.DepartyreCity" class="border-container-input form-control form-select-lg" aria-label=".form-select-lg example">
+                    <option value="0" selected>Город отбытия</option>
+                    @foreach (var c in createVm.Cities)
+                    {
+                        <option value="@c.Id">@c.Id - @c.Name</option>
+                    }
+                </select>
+                <span style="background-color: #007bff; color: white; font-weight: bold;" class=" input-group-text">→</span>
+                <select @bind="command.ArrivedCity" class="border-container-input form-control form-select-lg" aria-label=".form-select-lg example">
+                    @if (createVm.Cities != null)
+                    {
+                        <option value="0" selected>Город прибытия</option>
+                        @foreach (var c in createVm.Cities)
+                        {
+                            <option value="@c.Id">@c.Id - @c.Name</option>
+                        }
+                    }
+
+                </select>
+            </div>
+            <div class="input-group mb-3">
+                <input type="datetime-local" fo class="form-control" @bind-value="command.DepartyreDate" />
+                <span style="background-color: #007bff; color: white; font-weight: bold;" class=" input-group-text">→</span>
+                <input @bind="command.ArrivedDate" type="datetime-local" class="form-control">
+            </div>
+            <div class="input-group mb-3">
+                <select @bind="command.PlaneId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                    <option value="0" selected>Выберите самолет</option>
+                    @foreach (var p in createVm.Planes)
+                    {
+                        <option value="@p.Id">@p.Id - @p.Model - @p.Capacity человек</option>
+                    }
+                </select>
+            </div>
+            <div class="input-group mb-3">
+                <select @bind="command.CaptainId" class="form-control form-select-lg" aria-label=".form-select-lg example">
+                    <option value="0" selected>Выберите капитана</option>
+                    @foreach (var c in createVm.Captains)
+                    {
+                        <option value="@c.Id">@c.Id - @c.LastName @c.FirstName @c.Patronymic</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <button @onclick="Add" class="btn btn-warning">Создать</button>
+            </div>
+        </div>
+
+    </div>
+
+}
+
+@code {
+    private CreateFlightVm createVm;
+    private CreateFlightCommand command;
+    private List<Error> errors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        createVm = await Http.GetFromJsonAsync<CreateFlightVm>("https://localhost:5001/api/flights/forAdd");
+        command = new CreateFlightCommand();
+        command.DepartyreDate = DateTime.Now;
+        command.ArrivedDate = DateTime.Now;
+    }
+
+    private async void Add()
+    {
+        var response = await Http.PostAsJsonAsync("https://localhost:5001/api/flights/add", command);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo("flights");
+        }
+    }
+}

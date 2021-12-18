@@ -1,0 +1,119 @@
+﻿@page "/planes"
+@using AirlineCompany.Application.Planes.Queries.GetPlanes;
+@inject HttpClient Http;
+
+@if (planesVm == null)
+{
+    <h1>Загрузка...</h1>
+}
+else
+{
+    <Add Href="AddPlane"></Add>
+    <div class="row">
+        <div class="col-9">
+            <ul class="list">
+                @foreach (var p in planesVm.Planes)
+                {
+                    <li class="list-item">
+                        <a style="text-decoration: none;" href="plane/@p.Id">
+                            <div class="list-item-content shadow-sm">
+                                <div class="list-item-header">
+                                    <span>@p.Id</span>
+                                </div>
+                                <div class="list-item-main">
+                                    <div>
+                                        <span>@p.Model</span>
+                                    </div>
+                                    <div>
+                                        <span>Места:</span><span class="badge bg-primary text-light">@p.Capacity</span>
+                                    </div>
+                                    <div>
+                                        <span>Ряды:</span><span class="badge bg-primary text-light">@p.Rows</span>
+                                    </div>
+                                    <div>
+                                        <span>В ряду мест:</span><span class="badge bg-primary text-light">@p.SitsInRow</span>
+                                    </div>
+                                    <div>
+                                        <span>Рейсов назначено:</span><span class="badge bg-warning text-light">@p.FlightsCount</span>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </a>
+
+                    </li>
+                }
+            </ul>
+        </div>
+        <div class="col-3">
+            <div class="search shadow">
+                <div class="row ">
+                    <h5>Сортировать по</h5>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Модели
+                    </div>
+                    <div class="col-4">
+                        <input class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Местам
+                    </div>
+                    <div class="col-4">
+                        <input class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Рядам
+                    </div>
+                    <div class="col-4">
+                        <input class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-8">
+                        Мест в ряду
+                    </div>
+                    <div class="col-4">
+                        <input class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button class="btn btn-primary">Сортировать</button>
+                </div>
+
+            </div>
+            <div class="sort shadow">
+                <h5>Поиск</h5>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Модель</span>
+                    <input type="text" class="form-control" aria-label="">
+                </div>
+                <div class="input-group input-group-sm mb-3">
+                    <span class="input-group-text mr-1" id="inputGroup-sizing-sm">Места</span>
+                    <input type="text" class="form-control" aria-label="">
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button class="btn btn-primary">Найти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private PlanesVm planesVm;
+
+    protected async override Task OnInitializedAsync()
+    {
+        planesVm = await Http.GetFromJsonAsync<PlanesVm>($"https://localhost:5001/api/planes/all");
+    }
+}

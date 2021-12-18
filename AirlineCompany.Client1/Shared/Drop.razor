@@ -1,0 +1,32 @@
+﻿@using AirlineCompany.Application.Sits.Commands.Update;
+
+@inject NavigationManager NavManager
+
+<button @onclick="Delete" class="btn btn-danger">@DropButtonLable</button>
+
+@code {
+
+    [Parameter]
+    public string DropButtonLable { get; set; } = "Удалить";
+
+    [Parameter]
+    public string FlightId { get; set; }
+
+    [Parameter]
+    public string PassengerId { get; set; }
+
+    [Parameter]
+    public Action HasChanged { get; set; }
+
+    private async void Delete()
+    {
+        var http = new HttpClient();
+        var command = new UpdateSitsCommand()
+        {
+            FlightId = int.Parse(FlightId),
+            PassengerId = int.Parse(PassengerId)
+        };
+        var response = await http.PutAsJsonAsync($"https://localhost:5001/api/sits/update", command);
+        HasChanged();
+    }
+}

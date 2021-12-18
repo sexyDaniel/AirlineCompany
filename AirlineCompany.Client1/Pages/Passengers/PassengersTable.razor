@@ -1,0 +1,137 @@
+﻿@page "/Passengers"
+@using AirlineCompany.Application.Passengers.Queries.GetPassengers;
+@inject HttpClient Http;
+
+@if (passengerVm == null)
+{
+    <h1>Загрузка...</h1>
+}
+else
+{
+    <Add Href="AddPassenger"></Add>
+    <div class="row">
+        <div class="col-9">
+            <ul class="list">
+                @foreach (var p in passengerVm.Passengers)
+                {
+                    <li class="list-item-passenger">
+                        <a href="passenger/@p.Id" style="text-decoration: none;">
+                            <div class="list-item-content shadow-sm" style="background-color: #ffffffcc;">
+                                <div class="list-item-header">
+                                    <span>@p.Id</span>
+                                </div>
+                                <div class="list-item-main">
+                                    <div>
+                                        <span>@p.LastName</span>
+                                    </div>
+                                    <div>
+                                        <span> @p.FirstName </span>
+                                    </div>
+                                    <div>
+                                        <span>@p.Patronymic</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span>Рейсы:</span><span class="badge bg-warning text-light">@p.FlightsCount</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                }
+
+            </ul>
+        </div>
+        <div class="col-3">
+            <div class="search shadow">
+                <div class="row ">
+                    <h5>Сортировать по</h5>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        Фамилии
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="IsSortByLastName" class="checkbox" type="checkbox" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        Имени
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="IsSortByFirstName" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-8">
+                        Отчеству
+                    </div>
+                    <div class="col-4">
+                        <input @bind-value="IsSortByPatronymic" class="checkbox" type="checkbox">
+                    </div>
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Sort" class="btn btn-primary">Сортировать</button>
+                </div>
+
+            </div>
+            <div class="sort shadow">
+                <h4>Поиск</h4>
+                <div class="col-8">
+                    Фамилия
+                </div>
+                <div class="col-4">
+                    <input @bind-value="LastName" type="text">
+                </div>
+                <div class="col-8">
+                    Имя
+                </div>
+                <div class="col-4">
+                    <input @bind-value="FirstName" type="text">
+                </div>
+                <div class="col-8">
+                    Отчество
+                </div>
+                <div class="col-4">
+                    <input @bind-value="Patronymic" type="text">
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <button @onclick="Search" class="btn btn-primary">Найти</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private PassengerVm passengerVm;
+    private bool IsSortByFirstName;
+    private bool IsSortByLastName;
+    private bool IsSortByPatronymic;
+    private string FirstName= "";
+    private string LastName = "";
+    private string Patronymic = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        passengerVm = await Http.GetFromJsonAsync<PassengerVm>("https://localhost:5001/api/passengers/all");
+    }
+
+    private async void Sort()
+    {
+        passengerVm = await Http.GetFromJsonAsync<PassengerVm>($"https://localhost:5001/api/passengers/sort?" +
+              $"byFirstName={IsSortByFirstName}" +
+              $"&byLastName={IsSortByLastName}" +
+              $"&byPatronymic={IsSortByPatronymic}");
+        StateHasChanged();
+    }
+
+    private async void Search()
+    {
+        passengerVm = await Http.GetFromJsonAsync<PassengerVm>($"https://localhost:5001/api/passengers/search/?" +
+            $"firstName={FirstName}" +
+            $"&lastName={LastName}" +
+            $"&patronymic={Patronymic}");
+        StateHasChanged();
+    }
+}

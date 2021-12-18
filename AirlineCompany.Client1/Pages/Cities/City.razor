@@ -1,0 +1,136 @@
+﻿@page "/city/{Id}"
+
+@using AirlineCompany.Application.Flights.Queries.GetFlightForCity;
+@using AirlineCompany.Application.Cities.Queries.GetCityById;
+@using AirlineCompany.Application.Cities.Commands.Update;
+@using AirlineCompany.Application.Common;
+
+@inject HttpClient http;
+@inject NavigationManager NavManager;
+
+@if (city == null || flights == null)
+{
+    <h2>Загрузка...</h2>
+}
+else
+{
+    <div class="main">
+        <div class="row">
+            <div class="col-4">
+                <div class="" style="margin-top: 300px;">
+                    <div class="text-danger">
+                        <ul>
+                            @if (errors != null)
+                            {
+                                @foreach (var e in errors)
+                                {
+                                    <li>@e.Text</li>
+                                }
+                            }
+
+                        </ul>
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Название</span>
+                        <input @bind="UpdateCity.Name" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <button @onclick="Update" class="btn btn-secondary">Сохранить</button>
+                    <button @onclick="Delete" class="btn btn-danger">Удалить</button>
+                </div>
+            </div>
+            <div class="col-4">
+                <h2>Рейсы из:</h2>
+                @if (flights.DepartyreFlights == null || flights.DepartyreFlights.Count == 0)
+                {
+                    <h4>Из этого города нет рейсов</h4>
+                }
+                else
+                {
+                    @foreach (var f in flights.DepartyreFlights)
+                    {
+                        <div class="row text-center mt-2 shadow-sm passenger-flight">
+                            <div class="col-3" style="font-size: 25px;">
+                                <a href="flight/@f.Id">
+                                    <span class="badge bg-primary text-light">Рейс @f.Id</span>
+                                </a>
+                            </div>
+                            <div class="col-9 text-right" style="margin-top:5px;font-size: 20px;">
+                                <span class="badge bg-warning text-light">@f.DepartureCity</span>
+                                <span class="badge bg-secondary text-light">@f.ArrivedCity</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <div class="col-4">
+                <h2>Рейсы в:</h2>
+                @if (flights.ArrivedFlights == null || flights.ArrivedFlights.Count == 0)
+                {
+                    <h4>В этот город нет рейсов</h4>
+                }
+                else
+                {
+                    @foreach (var f in flights.ArrivedFlights)
+                    {
+                        <div class="row text-center mt-2 shadow-sm passenger-flight">
+                            <div class="col-3" style="font-size: 25px;">
+                                <a href="flight/@f.Id">
+                                    <span class="badge bg-primary text-light">Рейс @f.Id</span>
+                                </a>
+                            </div>
+                            <div class="col-9 text-right" style="margin-top:5px;font-size: 20px;">
+                                <span class="badge bg-warning text-light">@f.DepartureCity</span>
+                                <span class="badge bg-secondary text-light">@f.ArrivedCity</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+    private FlightsForCityVm flights;
+    private CityByIdVm city;
+    private UpdateCityCommnad UpdateCity;
+    private List<Error> errors;
+
+    protected async override Task OnInitializedAsync()
+    {
+        flights = await http.GetFromJsonAsync<FlightsForCityVm>($"https://localhost:5001/api/flights/forCity/{Id}");
+        city = await http.GetFromJsonAsync<CityByIdVm>($"https://localhost:5001/api/cities/{Id}");
+        UpdateCity = new UpdateCityCommnad() { Id = int.Parse(Id),Name = city.City.Name};
+    }
+
+    private async void Delete()
+    {
+        var response = await http.DeleteAsync($"https://localhost:5001/api/cities/delete/{Id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo($"cities");
+        }
+    }
+
+    private async void Update()
+    {
+        var response = await http.PutAsJsonAsync($"https://localhost:5001/api/cities/update", UpdateCity);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo($"cities");
+        }
+    }
+}

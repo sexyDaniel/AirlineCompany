@@ -1,0 +1,21 @@
+﻿@model RegisterViewModel
+
+<div class="outer" style="height: 100%; width: 100%; display: flex; justify-content: center; align-items: center; margin-top: 200px;">
+    <div class="content shadow-lg" style="width: 450px; border-radius: 10px; padding: 50px 40px ">
+        <h2 class="text-center">Регистрация</h2>
+        <form asp-action="Register" asp-controller="Auth" method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div class="form-group">
+                <input placeholder="UserName" class="form-control" asp-for="UserName" />
+            </div>
+            <div class="form-group">
+                <input placeholder="Email" class="form-control" asp-for="Email" />
+            </div>
+            <div class="form-group">
+                <input placeholder="Password" class="form-control" asp-for="Password" />
+            </div>
+            <button class="btn btn-primary">Регистрация</button>
+            <a class="btn btn-secondary" asp-action="Login" asp-controller="Auth" asp-route-returnUrl="@Model.ReturnUrl">Войти</a>
+        </form>
+    </div>
+</div>

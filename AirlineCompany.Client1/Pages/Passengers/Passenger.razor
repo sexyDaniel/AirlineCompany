@@ -1,0 +1,133 @@
+﻿@page "/passenger/{Id}"
+
+@using AirlineCompany.Application.Passengers.Queries.GetPassengerById;
+@using AirlineCompany.Application.Flights.Queries.GetPassengerFlights;
+@using AirlineCompany.Application.Passengers.Commands.Update;
+@using AirlineCompany.Application.Common;
+
+@inject HttpClient http;
+@inject NavigationManager NavManager;
+@inject IJSRuntime JsRuntime;
+
+@if (passengerVm == null || passengerFlightVm == null)
+{
+    <h2>Загрузка...</h2>
+}
+else
+{
+    <div class="main">
+        <div class="row">
+            <div class="col-5 ">
+                <div class="" style="margin-top: 200px;">
+                    <Errors ErrorsList="errors" />
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Фамилия</span>
+                        <input @bind-value="command.SecondName" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Имя</span>
+                        <input @bind-value="command.FirstName" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Отчество</span>
+                        <input @bind-value="command.Patronymic" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Возраст</span>
+                        <input @bind-value="command.Birthday" maxlength="40" type="date" class="form-control">
+                    </div>
+                    <button @onclick="Update" class="btn btn-secondary">Сохранить</button>
+                    <button @onclick="Delete" class="btn btn-danger">Удалить</button>
+                </div>
+
+            </div>
+            <div class="col-7">
+                @if (passengerFlightVm.PassengerFlightDtos == null || passengerFlightVm.PassengerFlightDtos.Count == 0)
+                {
+                    <h3>У данного пассажира нет рейсов</h3>
+                }
+                else
+                {
+                    @foreach (var f in passengerFlightVm.PassengerFlightDtos)
+                    {
+                        <div class="row text-center mt-2 shadow-sm passenger-flight">
+                            <div class="col-2" style="font-size: 25px;">
+                                <a href="flight/@f.Id">
+                                    <span class="badge bg-primary text-light">Рейс @f.Id</span>
+                                </a>
+                            </div>
+                            <div class="col-6 text-left" style="margin-top:5px;font-size: 20px;">
+                                <span class="badge bg-warning text-light">из: @f.DepartyreCity</span>
+                                <span class="badge bg-secondary text-light">в: @f.ArrivedCity</span>
+                            </div>
+                            <div class="col-4" style="font-size: 15px;">
+                                <Drop FlightId="@f.Id.ToString()" PassengerId="@Id" HasChanged="@Reload" />
+                            </div>
+                        </div>
+                    }
+                }
+
+
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+
+    private PassengerByIdVm passengerVm;
+    private PassengerFlightVm passengerFlightVm;
+    private UpdatePassengerQuery command;
+    private List<Error> errors;
+
+    [Parameter]
+    public string Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        passengerVm = await http.GetFromJsonAsync<PassengerByIdVm>($"https://localhost:5001/api/passengers/{Id}");
+        passengerFlightVm = await http.GetFromJsonAsync<PassengerFlightVm>($"https://localhost:5001/api/flights/forPassenger/{Id}");
+        command = new UpdatePassengerQuery()
+        {
+            Id = int.Parse(Id),
+            FirstName = passengerVm.PassengerByIdDtos.First().FirstName,
+            SecondName = passengerVm.PassengerByIdDtos.First().LastName,
+            Birthday = passengerVm.PassengerByIdDtos.First().Birthday,
+            Patronymic = passengerVm.PassengerByIdDtos.First().Patronymic,
+        };
+    }
+
+    private async void Reload()
+    {
+        passengerFlightVm = await http.GetFromJsonAsync<PassengerFlightVm>($"https://localhost:5001/api/flights/forPassenger/{Id}");
+        StateHasChanged();
+    }
+
+    private async void Update()
+    {
+        var response = await http.PutAsJsonAsync($"https://localhost:5001/api/passengers/update",command);
+        errors = !response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<List<Error>>() : null;
+        if (errors == null)
+        {
+            await JsRuntime.InvokeVoidAsync("alert", "Сохранение произошло успешно!");
+        }
+
+        StateHasChanged();
+    }
+
+    private async void Delete()
+    {
+        var response = await http.DeleteAsync($"https://localhost:5001/api/passengers/delete/{Id}");
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo("passengers");
+        }
+
+    }
+}

@@ -1,0 +1,76 @@
+﻿@page "/AddPlane"
+
+@using AirlineCompany.Application.Planes.Commands.Create;
+@using AirlineCompany.Application.Common;
+@using AirlineCompany.Application.PlaneModels.Queries.GetModels;
+
+@inject NavigationManager NavManager
+@inject HttpClient http;
+
+<div class="main" style="overflow: hidden;height: 100%;">
+    <div class="outer" style="height: 100%;">
+        <div class="border-container">
+            <Errors ErrorsList="errors" />
+            <div class="border-container-title text-center">
+                <span>Добавить самолет</span>
+            </div>
+            <div class="form-group mb-3">
+                <label>Количество рядов</label>
+                <input @bind-value="command.Rows" maxlength="4" class="form-control" type="number" max="51" min="3" >
+            </div>
+            <div class="form-group mb-3">
+                <label>Количество мест в ряду</label>
+                <input @bind-value="command.SitsInRow" maxlength="4" class="form-control" type="number">
+            </div>
+            <div class="form-group mb-3">
+                <label>Модель</label>
+                <select @bind="command.ModelId" class="border-container-input form-control form-select-lg" aria-label=".form-select-lg example">
+                    <option value="0" selected>Модель</option>
+                    @if (ModelsVm.ModelsDtos != null)
+                    {
+                        @foreach (var c in ModelsVm.ModelsDtos)
+                        {
+                            <option value="@c.Id">@c.Id - @c.Model</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label>Всего мест</label>
+                <input disabled value="@(command.Rows*command.SitsInRow)" maxlength="4" class="form-control" type="number">
+            </div>
+            <div>
+                <button @onclick="Add" class="btn btn-warning">Добавить</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private CreatePlaneCommand command = new CreatePlaneCommand();
+    private GetModelsVm ModelsVm = new GetModelsVm();
+    private List<Error> errors;
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        ModelsVm = await http.GetFromJsonAsync<GetModelsVm>("https://localhost:5001/api/models/all");
+        StateHasChanged();
+    }
+
+    private async void Add()
+    {
+        command.Capacity = command.Rows * command.SitsInRow;
+        var response = await http.PostAsJsonAsync("https://localhost:5001/api/planes/add", command);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            NavManager.NavigateTo("planes");
+        }
+    }
+}

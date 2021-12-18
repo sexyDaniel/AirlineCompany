@@ -1,0 +1,49 @@
+﻿@page "/AddCaptain"
+
+@using AirlineCompany.Application.Captains.Commands.Create;
+@using AirlineCompany.Application.Common;
+
+@inject HttpClient http;
+@inject NavigationManager NavManager
+
+<div class="main" style="overflow: hidden;height: 100%;">
+    <div class="outer" style="height: 100%;">
+        <div class="border-container">
+            <div class="border-container-title text-center">
+                <span>Добавить капитана</span>
+            </div>
+            <Errors ErrorsList="errors"/>
+            <div class="input-group mb-3">
+                <input maxlength="40" @bind-value="command.LastName" class="form-control" type="text" placeholder="Фамилия">
+            </div>
+            <div class="input-group mb-3">
+                <input maxlength="40" @bind-value="command.FirstName" class="form-control" type="text" placeholder="Имя">
+            </div>
+            <div class="input-group mb-3">
+                <input maxlength="40" @bind-value="command.Patronomic" class="form-control" type="text" placeholder="Отчество">
+            </div>
+            <div>
+                <button @onclick="Add" class="btn btn-warning">Добавить</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private CreateCaptainCommand command = new CreateCaptainCommand();
+    private List<Error> errors;
+
+    private async void Add()
+    {
+        var response = await http.PostAsJsonAsync("https://localhost:5001/api/captains/add", command);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+            return;
+        }
+
+        NavManager.NavigateTo("captains");
+    }
+}

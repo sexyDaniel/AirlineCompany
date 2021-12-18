@@ -1,0 +1,143 @@
+﻿@page "/captain/{Id}"
+
+@using AirlineCompany.Application.Common;
+@using AirlineCompany.Application.Captains.Queries.GetCaptainById;
+@using AirlineCompany.Application.Flights.Queries.GetCaptainFlights;
+@using AirlineCompany.Application.Captains.Commands.Update;
+@using AirlineCompany.Application.Flights.Comands.DropCartainFromFlight;
+
+@inject HttpClient http;
+@inject NavigationManager NavManager;
+@inject IJSRuntime JsRuntime;
+
+@if (captainVm == null || flightForCaptain == null)
+{
+    <h2>Загрузка...</h2>
+}
+else
+{
+    <div class="main">
+        <div class="row">
+            <div class="col-5 ">
+                <div class="" style="margin-top: 200px;">
+                    <Errors ErrorsList="errors" />
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Фамилия</span>
+                        <input @bind-value="command.LastName" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Имя</span>
+                        <input @bind-value="command.FirstName" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <div class="input-group mb-3">
+                        <span style="background-color: #007bff; color: white;" class="input-group-text" id="basic-addon1">Отчество</span>
+                        <input @bind-value="command.Patronymic" maxlength="40" type="text" class="form-control" aria-label="Username">
+                    </div>
+                    <button @onclick="Update" class="btn btn-secondary">Сохранить</button>
+                    <button @onclick="Delete" class="btn btn-danger">Удалить</button>
+                </div>
+
+            </div>
+            <div class="col-7 mt-2">
+                @if (flightForCaptain.CaptainFlightDtos == null || flightForCaptain.CaptainFlightDtos.Count == 0)
+                {
+                    <h3>У данного капитана нет рейсов</h3>
+                }
+                else
+                {
+                    @foreach (var f in flightForCaptain.CaptainFlightDtos)
+                    {
+                        <div class="row text-center mt-2 shadow-sm passenger-flight">
+                            <div class="col-2" style="font-size: 25px;">
+                                <a href="flight/@f.Id">
+                                    <span class="badge bg-primary text-light">Рейс @f.Id</span>
+                                </a>
+                            </div>
+                            <div class="col-6 text-left" style="margin-top:5px;font-size: 20px;">
+                                <span class="badge bg-warning text-light">из: @f.DepartyreCity</span>
+                                <span class="badge bg-secondary text-light">в: @f.ArrivedCity</span>
+                            </div>
+                            <div class="col-4" style="font-size: 15px;">
+                                <button @onclick="a=>DropFromFlight(f.Id)" class="btn btn-danger">Снять с рейса</button>
+                            </div>
+                        </div>
+                    }
+                }
+
+
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+
+    private List<Error> errors;
+    private CaptainVm captainVm;
+    private CaptainFlightsVm flightForCaptain;
+    private UpdateCaptainQuery command;
+
+
+    [Parameter]
+    public string Id { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        captainVm = await http.GetFromJsonAsync<CaptainVm>($"https://localhost:5001/api/captains/{Id}");
+
+        command = new UpdateCaptainQuery();
+        command.Id = int.Parse(Id);
+        command.LastName = captainVm.CaptainByIdDtos.First().LastName;
+        command.FirstName = captainVm.CaptainByIdDtos.First().FirstName;
+        command.Patronymic = captainVm.CaptainByIdDtos.First().Patronymic;
+        flightForCaptain = await http.GetFromJsonAsync<CaptainFlightsVm>($"https://localhost:5001/api/flights/forCaptains/{Id}");
+    }
+
+    private async void Reload()
+    {
+        flightForCaptain = await http.GetFromJsonAsync<CaptainFlightsVm>($"https://localhost:5001/api/flights/forCaptains/{Id}");
+        StateHasChanged();
+    }
+
+    private async void Update()
+    {
+        var response = await http.PutAsJsonAsync($"https://localhost:5001/api/captains/update",command);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            return;
+        }
+
+        await JsRuntime.InvokeVoidAsync("alert", "Сохранение произошло успешно!");
+    }
+
+    private async void Delete()
+    {
+        var response = await http.DeleteAsync($"https://localhost:5001/api/captains/delete/{Id}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            return;
+        }
+
+        NavManager.NavigateTo("/captains");
+    }
+
+    private async void DropFromFlight(int id)
+    {
+        var dropCap = new DropCaptainCommand { FlightId = id };
+        var response = await http.PutAsJsonAsync($"https://localhost:5001/api/flights/dropCaptain", dropCap);
+        if (!response.IsSuccessStatusCode)
+        {
+            errors = await response.Content.ReadFromJsonAsync<List<Error>>();
+            StateHasChanged();
+        }
+        else
+        {
+            Reload();
+            await JsRuntime.InvokeVoidAsync("alert", $"Капитан снят с реса {id} ");
+        }
+    }
+}
